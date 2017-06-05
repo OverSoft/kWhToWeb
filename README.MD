@@ -43,7 +43,7 @@ index.html
 ## Running on boot
 If you want to run this program on boot, just add the following lines to /etc/rc.local
 - cd /path/to/app
-- nohup node main.js &
+- nohup node server.js &
 
 In some weird cases, the serial port settings don't stick the first time "stty" set them.
 In that case, remove the -e from the hashbang of rc.local and run the stty command before the node command above.
