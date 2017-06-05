@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=1810"/>
+    <title>OverSoft's solar power monitor</title>
+    <link rel="stylesheet" href="style.css"/>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/jquery-3.2.1.min.js"></script>
+    <script src="/d3.min.js"></script>
+    <script src="/radial.js"></script>
+    <script src="/chart.js"></script>
+    <script>
+        var socket;
+        var vizPower, vizVolt1, vizVolt2, vizVolt3, vizAmp1, vizAmp2, vizAmp3, vizFreq, graphElement, dayChart;
+        $(document).ready(function () {
+
+            function resizeWindow() {
+                var winWidth = $(window).width();
+                var winHeight = $(window).height();
+                var resizer = winWidth / 1810;
+
+                if(resizer * 920 > winHeight) {
+                    resizer = winHeight / 920;
+                }
+                //if(doubler) resizer /= 2;
+
+                $("#container").css({zoom: resizer});
+
+
+            }
+
+            resizeWindow();
+            $(window).resize(resizeWindow);
+
+            vizPower = vizuly.component.radial_progress($("#powerMeter .radial")[0]);
+            vizPower.radius(100).arcThickness(.14).width(200).height(200).duration(0).capRadius(1).startAngle(-110).endAngle(110);
+            vizPower.min(0).max(6000).data(0).update();
+
+            vizVolt1 = vizuly.component.radial_progress($("#lineVoltage1 .radial")[0]);
+            vizVolt1.radius(100).arcThickness(.14).width(200).height(200).duration(0).capRadius(1).startAngle(-110).endAngle(110);
+            vizVolt1.min(0).max(30).data(10).update();
+
+            vizVolt2 = vizuly.component.radial_progress($("#lineVoltage2 .radial")[0]);
+            vizVolt2.radius(100).arcThickness(.14).width(200).height(200).duration(0).capRadius(1).startAngle(-110).endAngle(110);
+            vizVolt2.min(0).max(30).data(10).update();
+
+            vizVolt3 = vizuly.component.radial_progress($("#lineVoltage3 .radial")[0]);
+            vizVolt3.radius(100).arcThickness(.14).width(200).height(200).duration(0).capRadius(1).startAngle(-110).endAngle(110);
+            vizVolt3.min(0).max(30).data(10).update();
+
+            vizAmp1 = vizuly.component.radial_progress($("#lineAmp1 .radial")[0]);
+            vizAmp1.radius(100).arcThickness(.14).width(200).height(200).duration(0).capRadius(1).startAngle(-110).endAngle(110);
+            vizAmp1.min(0).max(10).data(0).update();
+
+            vizAmp2 = vizuly.component.radial_progress($("#lineAmp2 .radial")[0]);
+            vizAmp2.radius(100).arcThickness(.14).width(200).height(200).duration(0).capRadius(1).startAngle(-110).endAngle(110);
+            vizAmp2.min(0).max(10).data(0).update();
+
+            vizAmp3 = vizuly.component.radial_progress($("#lineAmp3 .radial")[0]);
+            vizAmp3.radius(100).arcThickness(.14).width(200).height(200).duration(0).capRadius(1).startAngle(-110).endAngle(110);
+            vizAmp3.min(0).max(10).data(0).update();
+
+            vizFreq = vizuly.component.radial_progress($("#lineFrequency .radial")[0]);
+            vizFreq.radius(100).arcThickness(.14).width(200).height(200).duration(0).capRadius(1).startAngle(-110).endAngle(110);
+            vizFreq.min(0).max(1).data(0).update();
+
+            var labels = [];
+            for (var i = 0; i < 1440; i += 5) {
+                var minutes = i % 60;
+                labels.push(Math.floor(i / 60) + ":" + ((minutes < 10) ? "0" : "") + minutes);
+            }
+
+            graphElement = $("#dayGraph");
+            dayChart     = new Chart(graphElement, {
+                type:    "line",
+                data:    {
+                    labels:   labels,
+                    datasets: [{
+                        label:           "Watts",
+                        fill:            false,
+                        borderColor:     "rgba(255, 204, 0, 1)",
+                        backgroundColor: "rgba(255, 204, 0, 0.3)",
+                        pointRadius:     0,
+                        data:            []
+                    }]
+                },
+                options: {
+                    responsive:          true,
+                    maintainAspectRatio: false,
+                    scales:              {
+                        xAxes: [{
+                            ticks: {
+                                autoSkip:      true,
+                                maxTicksLimit: 12
+                            }
+                        }],
+                        yAxes: [{
+                            ticks:      {
+                                max:         6000,
+                                beginAtZero: true
+                            },
+                            scaleLabel: {
+                                display:     true,
+                                labelString: "Power in watts"
+                            }
+                        }]
+                    }
+                }
+            });
+
+            socket = io();
+            socket.on('data', function (data) {
+                var powerTotal = Math.round(0 - data.power.total);
+                if (powerTotal < 0) powerTotal = 0;
+                $("#powerMeter .label").text(powerTotal);
+                vizPower.data(powerTotal).update();
+
+                $("#powerToday .label2").text((data.totals.export.wh - data.kwhAtMidnight).toFixed(2));
+                $("#powerTotal .label2").text(data.totals.export.wh.toFixed(2));
+
+                $("#lineVoltage1 .label").text(data.volts.p1.toFixed(2));
+                vizVolt1.data(data.volts.p1 - 220).update();
+
+                $("#lineVoltage2 .label").text(data.volts.p2.toFixed(2));
+                vizVolt2.data(data.volts.p2 - 220).update();
+
+                $("#lineVoltage3 .label").text(data.volts.p3.toFixed(2));
+                vizVolt3.data(data.volts.p3 - 220).update();
+
+                $("#lineAmp1 .label").text(data.amp.p1.toFixed(2));
+                vizAmp1.data(data.amp.p1).update();
+
+                $("#lineAmp2 .label").text(data.amp.p2.toFixed(2));
+                vizAmp2.data(data.amp.p2).update();
+
+                $("#lineAmp3 .label").text(data.amp.p3.toFixed(2));
+                vizAmp3.data(data.amp.p3).update();
+
+                $("#lineFrequency .label").text(data.frequency.toFixed(2));
+                vizFreq.data(data.frequency - 49.5).update();
+            });
+
+            socket.on("chart", function (chartData) {
+                console.dir(chartData);
+                var powerArr = [];
+                for (var i = 0; i < chartData.length; i++) {
+                    if (chartData[i] === null || chartData[i] === undefined) {
+                        powerArr[i] = 0;
+                    } else {
+                        powerArr[i] = 0 - chartData[i].power.total;
+                        if (powerArr[i] < 0) powerArr[i] = 0;
+                    }
+                }
+                dayChart.data.datasets[0].data = powerArr;
+                dayChart.update();
+            });
+        });
+    </script>
+</head>
+<body>
+<div id="container">
+    <div id="title">OverSoft's solar power monitor</div>
+    <div id="powerMeter" class="chart">
+        <div class="title">Actual power produced</div>
+        <div class="radial"></div>
+        <div class="label">0</div>
+        <div class="info">Watt</div>
+    </div>
+    <div id="powerToday" class="chart">
+        <div class="title">Power produced today</div>
+        <div class="label2">0.00</div>
+        <div class="info2">kW</div>
+    </div>
+    <div id="powerTotal" class="chart">
+        <div class="title">Total power produced</div>
+        <div class="label2">0.00</div>
+        <div class="info2">kWh</div>
+    </div>
+    <div id="lineVoltage1" class="chart">
+        <div class="title">Phase 1 voltage</div>
+        <div class="radial"></div>
+        <div class="label">230.0</div>
+        <div class="info">V</div>
+    </div>
+    <div id="lineVoltage2" class="chart">
+        <div class="title">Phase 2 voltage</div>
+        <div class="radial"></div>
+        <div class="label">230.0</div>
+        <div class="info">V</div>
+    </div>
+    <div id="lineVoltage3" class="chart">
+        <div class="title">Phase 3 voltage</div>
+        <div class="radial"></div>
+        <div class="label">230.0</div>
+        <div class="info">V</div>
+    </div>
+    <div id="lineAmp1" class="chart">
+        <div class="title">Phase 1 amps</div>
+        <div class="radial"></div>
+        <div class="label">0.00</div>
+        <div class="info">A</div>
+    </div>
+    <div id="lineAmp2" class="chart">
+        <div class="title">Phase 2 amps</div>
+        <div class="radial"></div>
+        <div class="label">0.00</div>
+        <div class="info">A</div>
+    </div>
+    <div id="lineAmp3" class="chart">
+        <div class="title">Phase 3 amps</div>
+        <div class="radial"></div>
+        <div class="label">0.00</div>
+        <div class="info">A</div>
+    </div>
+    <div id="lineFrequency" class="chart">
+        <div class="title">Frequency</div>
+        <div class="radial"></div>
+        <div class="label">50.00</div>
+        <div class="info">Hz</div>
+    </div>
+    <div id="dayGraphContainer">
+        <canvas id="dayGraph"></canvas>
+    </div>
+</div>
+</body>
+</html>
