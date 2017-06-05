@@ -6,6 +6,9 @@ Includes default support for the Eastron SDM630 (because that's what i have ;))
 The default setup includes power generation data for use in solar power installations.
 Runs fine on a raspberry pi (raspbian).
 
+## Screenshots
+![Screenshot 1](/readme/screenshot1.jpg?raw=true "Screenshot 1")
+
 ## Requirements
 - Any linux version
 - node.js v6+
