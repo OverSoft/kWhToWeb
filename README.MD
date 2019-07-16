@@ -59,4 +59,4 @@ No, not really, i made this just for fun.
 
 ## License
 This piece of software is available under the GNU GPL.
-This basically means that you can do whatever you want with it: modify it, sell it, whatever, as long as you mention me as an author and provide the source code for your project.
+This basically means that you can do whatever you want with it: modify it, sell it, whatever, as long as you mention me as an author and provide the source code to any changes to my code.
