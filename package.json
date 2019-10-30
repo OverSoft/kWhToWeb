@@ -30,6 +30,6 @@
     "moment":       "^2.18.1",
     "node-cleanup": "^2.1.2",
     "socket.io":    "^2.0.2",
-    "total.js":     "^2.6.0"
+    "total.js":     "^3.3.0"
   }
 }
